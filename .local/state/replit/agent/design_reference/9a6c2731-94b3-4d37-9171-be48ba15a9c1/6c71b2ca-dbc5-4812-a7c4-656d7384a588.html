@@ -1,0 +1,526 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slab Bridge General Arrangement Drawing Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                        'mono': ['ui-monospace', 'monospace']
+                    },
+                    colors: {
+                        'cad-dark': '#1F2937',
+                        'cad-medium': '#374151',
+                        'cad-blue': '#3B82F6',
+                        'cad-surface': '#F9FAFB'
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="bg-cad-surface font-inter">
+    <!-- @COMPONENT: HeaderNavigation -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-full mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-bridge text-cad-blue text-2xl mr-3"></i>
+                        <div>
+                            <h1 class="text-xl font-bold text-cad-dark">Bridge CAD Generator</h1>
+                            <p class="text-sm text-gray-600">Slab Bridge General Arrangement Drawing</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-gray-600">
+                        <span class="font-medium">Status:</span>
+                        <span class="text-green-600 font-medium" data-bind="applicationStatus">Ready</span>
+                    </div>
+                    <button class="bg-cad-blue text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: HeaderNavigation -->
+
+    <div class="flex h-screen">
+        <!-- @COMPONENT: InputParametersPanel -->
+        <div class="w-80 bg-white shadow-lg border-r border-gray-200 flex flex-col">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-cad-dark flex items-center">
+                    <i class="fas fa-sliders-h mr-2 text-cad-blue"></i>
+                    Input Parameters
+                </h2>
+                <p class="text-sm text-gray-600 mt-1">Based on LISP reed() function</p>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <!-- Scale Parameters -->
+                <div class="space-y-4">
+                    <h3 class="font-medium text-cad-dark border-b pb-2">Scale Factors</h3>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Scale 1 (Plan & Elevation)</label>
+                        <input type="number" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cad-blue font-mono"
+                               placeholder="1000" 
+                               data-bind="scale1"
+                               step="any">
+                        <p class="text-xs text-gray-500 mt-1">scale1 = atof(read-line f)</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Scale 2 (Sections)</label>
+                        <input type="number" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cad-blue font-mono"
+                               placeholder="500"
+                               data-bind="scale2" 
+                               step="any">
+                        <p class="text-xs text-gray-500 mt-1">scale2 = atof(read-line f)</p>
+                    </div>
+                </div>
+
+                <!-- Geometric Parameters -->
+                <div class="space-y-4">
+                    <h3 class="font-medium text-cad-dark border-b pb-2">Geometry</h3>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Skew Angle (degrees)</label>
+                        <input type="number" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cad-blue font-mono"
+                               placeholder="0"
+                               data-bind="skew" 
+                               step="any">
+                        <p class="text-xs text-gray-500 mt-1">skew = atof(read-line f)</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Datum Level</label>
+                        <input type="number" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cad-blue font-mono"
+                               placeholder="100"
+                               data-bind="datum"
+                               step="any">
+                        <p class="text-xs text-gray-500 mt-1">datum = atoi(read-line f)</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Top RL (Y-axis)</label>
+                        <input type="number" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cad-blue font-mono"
+                               placeholder="110"
+                               data-bind="toprl"
+                               step="any">
+                        <p class="text-xs text-gray-500 mt-1">toprl = atoi(read-line f)</p>
+                    </div>
+                </div>
+
+                <!-- Chainage Parameters -->
+                <div class="space-y-4">
+                    <h3 class="font-medium text-cad-dark border-b pb-2">Chainage & Intervals</h3>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Left Ch.</label>
+                            <input type="number" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cad-blue font-mono"
+                                   placeholder="0"
+                                   data-bind="left"
+                                   step="any">
+                            <p class="text-xs text-gray-500 mt-1">left</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Right Ch.</label>
+                            <input type="number" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cad-blue font-mono"
+                                   placeholder="50"
+                                   data-bind="right"
+                                   step="any">
+                            <p class="text-xs text-gray-500 mt-1">right</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">X Increment (m)</label>
+                            <input type="number" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cad-blue font-mono"
+                                   placeholder="5"
+                                   data-bind="xincr"
+                                   step="any">
+                            <p class="text-xs text-gray-500 mt-1">xincr</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Y Increment (m)</label>
+                            <input type="number" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cad-blue font-mono"
+                                   placeholder="2"
+                                   data-bind="yincr"
+                                   step="any">
+                            <p class="text-xs text-gray-500 mt-1">yincr</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">No. of Chainages</label>
+                        <input type="number" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cad-blue font-mono"
+                               placeholder="11"
+                               data-bind="noch"
+                               step="1" min="1">
+                        <p class="text-xs text-gray-500 mt-1">noch = atoi(read-line f)</p>
+                    </div>
+                </div>
+
+                <!-- Import/Export -->
+                <div class="space-y-4">
+                    <h3 class="font-medium text-cad-dark border-b pb-2">Data Import</h3>
+                    
+                    <div class="space-y-3">
+                        <button class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-md transition-colors text-sm">
+                            <i class="fas fa-file-upload mr-2"></i>Load from Text File
+                        </button>
+                        
+                        <button class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-md transition-colors text-sm">
+                            <i class="fas fa-file-excel mr-2"></i>Import Excel Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-200">
+                <button class="w-full bg-cad-blue hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors"
+                        data-event="click:calculateLayout">
+                    <i class="fas fa-calculator mr-2"></i>Calculate Layout
+                </button>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: InputParametersPanel -->
+
+        <!-- @COMPONENT: MainWorkArea -->
+        <div class="flex-1 flex flex-col">
+            <!-- Calculation Results Panel -->
+            <div class="bg-white border-b border-gray-200 p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-cad-dark">Calculated Values</h3>
+                    <div class="text-sm text-gray-600">Based on LISP calculations</div>
+                </div>
+                
+                <div class="grid grid-cols-6 gap-4 text-sm">
+                    <div class="bg-gray-50 p-3 rounded">
+                        <div class="font-medium text-gray-700">VVS</div>
+                        <div class="font-mono text-cad-blue" data-bind="calculations.vvs">1000.0</div>
+                        <div class="text-xs text-gray-500">vvs = 1000.0 / vs</div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-3 rounded">
+                        <div class="font-medium text-gray-700">HHS</div>
+                        <div class="font-mono text-cad-blue" data-bind="calculations.hhs">1000.0</div>
+                        <div class="text-xs text-gray-500">hhs = 1000.0 / hs</div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-3 rounded">
+                        <div class="font-medium text-gray-700">Skew (rad)</div>
+                        <div class="font-mono text-cad-blue" data-bind="calculations.skew1">0.0</div>
+                        <div class="text-xs text-gray-500">skew * 0.0174532</div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-3 rounded">
+                        <div class="font-medium text-gray-700">Sin/Cos</div>
+                        <div class="font-mono text-cad-blue" data-bind="calculations.sincos">1.0/0.0</div>
+                        <div class="text-xs text-gray-500">sin(skew1)/cos(skew1)</div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-3 rounded">
+                        <div class="font-medium text-gray-700">Scale Ratio</div>
+                        <div class="font-mono text-cad-blue" data-bind="calculations.sc">2.0</div>
+                        <div class="text-xs text-gray-500">sc = scale1 / scale2</div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-3 rounded">
+                        <div class="font-medium text-gray-700">Layout D1</div>
+                        <div class="font-mono text-cad-blue" data-bind="calculations.d1">20</div>
+                        <div class="text-xs text-gray-500">Distance in mm</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drawing Canvas Area -->
+            <div class="flex-1 bg-gray-100 p-6">
+                <div class="bg-white rounded-lg shadow-sm h-full flex flex-col">
+                    <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                        <div class="flex items-center space-x-4">
+                            <h3 class="font-semibold text-cad-dark">Bridge General Arrangement</h3>
+                            <div class="text-sm text-gray-600">A4 Landscape (297×210mm)</div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <button class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors">
+                                <i class="fas fa-search-plus mr-1"></i>Zoom In
+                            </button>
+                            <button class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors">
+                                <i class="fas fa-search-minus mr-1"></i>Zoom Out
+                            </button>
+                            <button class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors">
+                                <i class="fas fa-expand-arrows-alt mr-1"></i>Fit
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 p-4">
+                        <!-- @FUNCTIONALITY: This canvas should implement the bridge drawing using the LISP layout() function logic -->
+                        <canvas id="bridgeCanvas" 
+                                class="w-full h-full border border-gray-300 bg-white rounded"
+                                data-implementation="Implement bridge drawing based on LISP layout() function">
+                        </canvas>
+                        
+                        <!-- Canvas overlay with coordinates -->
+                        <div class="absolute top-4 left-4 bg-white bg-opacity-90 p-3 rounded shadow text-sm font-mono">
+                            <div>X: <span data-bind="mouse.x">0.0</span></div>
+                            <div>Y: <span data-bind="mouse.y">0.0</span></div>
+                            <div>Scale: 1:<span data-bind="canvas.scale">1000</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: MainWorkArea -->
+
+        <!-- @COMPONENT: OutputPanel -->
+        <div class="w-72 bg-white shadow-lg border-l border-gray-200 flex flex-col">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-cad-dark flex items-center">
+                    <i class="fas fa-file-export mr-2 text-cad-blue"></i>
+                    Export Options
+                </h2>
+            </div>
+
+            <div class="flex-1 p-6 space-y-6">
+                <!-- Drawing Information -->
+                <div class="space-y-3">
+                    <h3 class="font-medium text-cad-dark border-b pb-2">Drawing Info</h3>
+                    
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Drawing Type:</span>
+                            <span class="font-medium">Slab Bridge GA</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Paper Size:</span>
+                            <span class="font-medium">A4 Landscape</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Units:</span>
+                            <span class="font-medium">mm (1:1)</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Style:</span>
+                            <span class="font-medium">pmb100 (Arial)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dimension Style Settings -->
+                <div class="space-y-3">
+                    <h3 class="font-medium text-cad-dark border-b pb-2">Dimension Style (st)</h3>
+                    
+                    <div class="space-y-2 text-xs font-mono bg-gray-50 p-3 rounded">
+                        <div>DIMASZ: 150 drawing units</div>
+                        <div>DIMDEC: 0 decimal places</div>
+                        <div>DIMEXE: 400 extension</div>
+                        <div>DIMEXO: 400 offset</div>
+                        <div>DIMTXT: 400 text height</div>
+                        <div>Font: Arial</div>
+                    </div>
+                </div>
+
+                <!-- Position Functions -->
+                <div class="space-y-3">
+                    <h3 class="font-medium text-cad-dark border-b pb-2">Position Functions</h3>
+                    
+                    <div class="space-y-3">
+                        <div class="bg-blue-50 p-3 rounded text-sm">
+                            <div class="font-medium text-blue-800 mb-1">vpos(a)</div>
+                            <div class="text-blue-600 font-mono text-xs">a = vvs * (a - datum)</div>
+                            <div class="text-blue-600 font-mono text-xs">a = datum + a</div>
+                        </div>
+                        
+                        <div class="bg-green-50 p-3 rounded text-sm">
+                            <div class="font-medium text-green-800 mb-1">hpos(a)</div>
+                            <div class="text-green-600 font-mono text-xs">a = hhs * (a - left)</div>
+                            <div class="text-green-600 font-mono text-xs">a = left + a</div>
+                        </div>
+                        
+                        <div class="bg-purple-50 p-3 rounded text-sm">
+                            <div class="font-medium text-purple-800 mb-1">v2pos(a) / h2pos(a)</div>
+                            <div class="text-purple-600 font-mono text-xs">Additional sc scaling</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-200 space-y-3">
+                <button class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors"
+                        data-event="click:exportPDF">
+                    <i class="fas fa-file-pdf mr-2"></i>Export to PDF
+                </button>
+                
+                <button class="w-full bg-cad-blue hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors"
+                        data-event="click:exportDWG">
+                    <i class="fas fa-file-download mr-2"></i>Export to DWG
+                </button>
+                
+                <div class="text-xs text-gray-500 text-center">
+                    Files will be exported in A4 landscape format suitable for printing
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: OutputPanel -->
+    </div>
+
+    <!-- @COMPONENT: StatusBar -->
+    <footer class="bg-white border-t border-gray-200 px-6 py-3">
+        <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center space-x-6">
+                <div class="flex items-center">
+                    <i class="fas fa-circle text-green-500 text-xs mr-2"></i>
+                    <span class="text-gray-600">System Ready</span>
+                </div>
+                <div class="text-gray-600">
+                    Last Calculation: <span data-bind="status.lastCalculation" class="font-medium">--</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4 text-gray-600">
+                <div>Drawing Units: mm</div>
+                <div>Grid: ON</div>
+                <div>Snap: ON</div>
+                <div>Coordinates: <span class="font-mono" data-bind="status.coordinates">0.0, 0.0</span></div>
+            </div>
+        </div>
+    </footer>
+    <!-- @END_COMPONENT: StatusBar -->
+
+    <script>
+        // TODO: Implement business logic, API calls, and state management
+        (function() {
+            // LISP function implementations based on the attached code
+            
+            // Global variables matching LISP code
+            let scale1, scale2, skew, datum, toprl, left, right, xincr, yincr, noch;
+            let hs = 1, vs = 1, vvs, hhs, skew1, s, c, tn, sc, d1 = 20;
+            
+            // reed() function implementation
+            function reed(inputData) {
+                scale1 = parseFloat(inputData.scale1);
+                scale2 = parseFloat(inputData.scale2);
+                skew = parseFloat(inputData.skew);
+                datum = parseInt(inputData.datum);
+                toprl = parseInt(inputData.toprl);
+                left = parseFloat(inputData.left);
+                right = parseFloat(inputData.right);
+                xincr = parseFloat(inputData.xincr);
+                yincr = parseFloat(inputData.yincr);
+                noch = parseInt(inputData.noch);
+                
+                // Calculations from LISP code
+                vvs = 1000.0 / vs;
+                hhs = 1000.0 / hs;
+                skew1 = skew * 0.0174532;
+                s = Math.sin(skew1);
+                c = Math.cos(skew1);
+                tn = s / c;
+                sc = scale1 / scale2;
+                
+                return {
+                    vvs, hhs, skew1, s, c, tn, sc, d1
+                };
+            }
+            
+            // vpos() function implementation
+            function vpos(a) {
+                a = vvs * (a - datum);
+                a = datum + a;
+                return a;
+            }
+            
+            // hpos() function implementation  
+            function hpos(a) {
+                a = hhs * (a - left);
+                a = left + a;
+                return a;
+            }
+            
+            // v2pos() function implementation
+            function v2pos(a) {
+                a = vvs * (a - datum);
+                a = sc * a;
+                a = datum + a;
+                return a;
+            }
+            
+            // h2pos() function implementation
+            function h2pos(a) {
+                a = hhs * (a - left);
+                a = sc * a;
+                a = left + a;
+                return a;
+            }
+            
+            // layout() function implementation - partial based on LISP code
+            function layout() {
+                left = left - (left % 1.0); // converts left into integer
+                
+                const pta1 = [left, datum];
+                const ptb1 = [left, datum - (d1 * scale1)];
+                const pta2 = [hpos(right), datum];
+                const ptb2 = [hpos(right), datum - (d1 * scale1)];
+                
+                return { pta1, ptb1, pta2, ptb2 };
+            }
+            
+            // Canvas drawing implementation
+            function drawBridge(canvas, calculations) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Set coordinate system
+                ctx.save();
+                ctx.translate(50, canvas.height - 50);
+                ctx.scale(1, -1); // Flip Y-axis to match engineering convention
+                
+                // TODO: Implement complete bridge drawing based on LISP layout() function
+                // This would include drawing the elevation, plan, and side elevation
+                
+                ctx.restore();
+            }
+            
+            // Event handlers
+            window.addEventListener('load', function() {
+                const canvas = document.getElementById('bridgeCanvas');
+                if (canvas) {
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    
+                    // TODO: Initialize canvas with grid and coordinate system
+                }
+            });
+            
+        })();
+    </script>
+</body>
+</html>

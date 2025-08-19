@@ -1,0 +1,425 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bridge GAD Drafter - Engineering Drawing Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#64748b',
+                        success: '#059669',
+                        warning: '#d97706',
+                        error: '#dc2626'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-inter">
+    <!-- @COMPONENT: Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-primary text-white p-2 rounded-lg">
+                        <i class="fas fa-bridge text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-semibold text-gray-900">Bridge GAD Drafter</h1>
+                        <p class="text-sm text-gray-500">General Arrangement Drawing Generator</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="text-gray-500 hover:text-gray-700" data-event="click:showHelp">
+                        <i class="fas fa-question-circle text-lg"></i>
+                    </button>
+                    <button class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors" data-event="click:showSettings">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- @COMPONENT: StatusBanner -->
+        <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4" data-mock="true">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-primary mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-blue-800">LISP Code Enhancement Status</h3>
+                    <p class="text-sm text-blue-700 mt-1">Main bridge elevation drawing deficiencies corrected. All coordinate transformations and scaling functions updated.</p>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: StatusBanner -->
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- @COMPONENT: FileUploadSection -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-semibold text-gray-900">
+                            <i class="fas fa-upload text-primary mr-2"></i>
+                            Upload GAD Input File
+                        </h2>
+                        <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">Step 1</span>
+                    </div>
+
+                    <!-- File Upload Zone -->
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer" 
+                         data-event="click:openFileDialog" data-implementation="File upload handling with validation">
+                        <div class="space-y-4">
+                            <div class="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-file-text text-gray-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-lg font-medium text-gray-900">Upload GAD.txt File</p>
+                                <p class="text-sm text-gray-500 mt-1">Click to browse or drag and drop your bridge parameter file</p>
+                            </div>
+                            <p class="text-xs text-gray-400">Supported format: .txt (max 10MB)</p>
+                        </div>
+                    </div>
+
+                    <!-- File Preview Section -->
+                    <div class="mt-6 hidden" data-bind="fileUploaded" data-implementation="Show when file is uploaded">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-file-text text-primary text-lg"></i>
+                                    <div>
+                                        <p class="font-medium text-gray-900" data-bind="fileName">GAD_Bridge_Project.txt</p>
+                                        <p class="text-sm text-gray-500" data-bind="fileSize">2.4 KB</p>
+                                    </div>
+                                </div>
+                                <button class="text-gray-400 hover:text-gray-600" data-event="click:removeFile">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Parameter Preview -->
+                        <div class="mt-4 bg-gray-50 rounded-lg p-4">
+                            <h4 class="font-medium text-gray-900 mb-3">Bridge Parameters Preview</h4>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span class="text-gray-500">Plan Scale:</span>
+                                    <span class="ml-2 font-medium" data-bind="planScale">1:100</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Section Scale:</span>
+                                    <span class="ml-2 font-medium" data-bind="sectionScale">1:50</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Skew Angle:</span>
+                                    <span class="ml-2 font-medium" data-bind="skewAngle">15°</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Bridge Length:</span>
+                                    <span class="ml-2 font-medium" data-bind="bridgeLength">25.0m</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- @COMPONENT: DrawingGeneration -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-semibold text-gray-900">
+                            <i class="fas fa-drafting-compass text-primary mr-2"></i>
+                            Generate Drawings
+                        </h2>
+                        <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">Step 2</span>
+                    </div>
+
+                    <!-- Drawing Options -->
+                    <div class="space-y-4 mb-6">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" id="elevation" checked class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+                                <label for="elevation" class="font-medium text-gray-900">Main Bridge Elevation</label>
+                            </div>
+                            <span class="text-sm text-gray-500">Fixed deficiencies</span>
+                        </div>
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" id="plan" checked class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+                                <label for="plan" class="font-medium text-gray-900">Bridge Plan View</label>
+                            </div>
+                            <span class="text-sm text-success"><i class="fas fa-check mr-1"></i>Updated</span>
+                        </div>
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" id="side" checked class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+                                <label for="side" class="font-medium text-gray-900">Side Elevation</label>
+                            </div>
+                            <span class="text-sm text-success"><i class="fas fa-check mr-1"></i>Corrected</span>
+                        </div>
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button class="w-full bg-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                            data-event="click:generateDrawings" data-implementation="Trigger LISP code execution">
+                        <i class="fas fa-play mr-2"></i>Generate Bridge Drawings
+                    </button>
+                </div>
+                <!-- @END_COMPONENT: DrawingGeneration -->
+            </div>
+            <!-- @END_COMPONENT: FileUploadSection -->
+
+            <!-- @COMPONENT: ProgressSidebar -->
+            <div class="space-y-6">
+                <!-- Progress Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-tasks text-primary mr-2"></i>
+                        Generation Progress
+                    </h3>
+                    
+                    <!-- @STATE: generationProgress:object = {status: 'idle', currentStep: 0, totalSteps: 5} -->
+                    <div class="space-y-4" data-bind="generationProgress">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <span class="text-sm text-gray-700">File validation complete</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs animate-pulse">
+                                2
+                            </div>
+                            <span class="text-sm text-gray-700">Processing bridge parameters</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-gray-200 text-gray-400 rounded-full flex items-center justify-center text-xs">
+                                3
+                            </div>
+                            <span class="text-sm text-gray-400">Generating elevation views</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-gray-200 text-gray-400 rounded-full flex items-center justify-center text-xs">
+                                4
+                            </div>
+                            <span class="text-sm text-gray-400">Creating DWG files</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-gray-200 text-gray-400 rounded-full flex items-center justify-center text-xs">
+                                5
+                            </div>
+                            <span class="text-sm text-gray-400">Generating PDF output</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                            <span>Overall Progress</span>
+                            <span data-bind="progressPercentage">40%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 40%" data-bind="progressBar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LISP Code Status -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-code text-primary mr-2"></i>
+                        LISP Code Status
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                            <div>
+                                <p class="text-sm font-medium text-green-800">Main Elevation Fixed</p>
+                                <p class="text-xs text-green-600">Coordinate transformation corrected</p>
+                            </div>
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                            <div>
+                                <p class="text-sm font-medium text-green-800">Scaling Functions</p>
+                                <p class="text-xs text-green-600">vpos, hpos, v2pos, h2pos updated</p>
+                            </div>
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                            <div>
+                                <p class="text-sm font-medium text-green-800">Drawing Commands</p>
+                                <p class="text-xs text-green-600">AutoCAD plotting commands verified</p>
+                            </div>
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Download Section -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-download text-primary mr-2"></i>
+                        Download Files
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <button class="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50" 
+                                disabled data-event="click:downloadDWG">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-file-code text-primary"></i>
+                                <div class="text-left">
+                                    <p class="text-sm font-medium text-gray-900">AutoCAD DWG</p>
+                                    <p class="text-xs text-gray-500">For PC AutoCAD usage</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-down text-gray-400"></i>
+                        </button>
+                        
+                        <button class="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50" 
+                                disabled data-event="click:downloadPDF">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-file-pdf text-red-500"></i>
+                                <div class="text-left">
+                                    <p class="text-sm font-medium text-gray-900">PDF Drawing</p>
+                                    <p class="text-xs text-gray-500">For web viewing (A4 landscape)</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-down text-gray-400"></i>
+                        </button>
+                        
+                        <button class="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50" 
+                                disabled data-event="click:downloadLISP">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-file-code text-blue-500"></i>
+                                <div class="text-left">
+                                    <p class="text-sm font-medium text-gray-900">Updated LISP Code</p>
+                                    <p class="text-xs text-gray-500">Corrected deficiencies</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-arrow-down text-gray-400"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: ProgressSidebar -->
+        </div>
+
+        <!-- @COMPONENT: TechnicalSpecifications -->
+        <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">
+                <i class="fas fa-cogs text-primary mr-2"></i>
+                Technical Specifications & LISP Code Corrections
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-900 mb-3">Input Parameters</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Scale factors (plan/elevation/sections)</li>
+                        <li>• Skew angle in degrees</li>
+                        <li>• Datum and reference levels</li>
+                        <li>• Chainage start/end points</li>
+                        <li>• Increment intervals (X/Y axis)</li>
+                        <li>• Total number of chainages</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-900 mb-3">Drawing Views</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Main bridge elevation (corrected)</li>
+                        <li>• Plan view with dimensions</li>
+                        <li>• Side elevation views</li>
+                        <li>• Cross-sectional details</li>
+                        <li>• A4 landscape layout format</li>
+                        <li>• AutoCAD dimension styles</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-900 mb-3">Code Corrections</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Fixed coordinate transformation functions</li>
+                        <li>• Corrected scaling calculations (vvs/hhs)</li>
+                        <li>• Updated plot command sequences</li>
+                        <li>• Enhanced dimension style settings</li>
+                        <li>• Improved layout positioning</li>
+                        <li>• Maintained existing variable structure</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: TechnicalSpecifications -->
+    </main>
+
+    <!-- @COMPONENT: Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center space-x-4 mb-4 md:mb-0">
+                    <p class="text-sm text-gray-500">Bridge GAD Drafter v2.1</p>
+                    <span class="text-gray-300">|</span>
+                    <p class="text-sm text-gray-500">Engineering Drawing Automation</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="text-sm text-gray-500 hover:text-gray-700" data-event="click:showDocumentation">
+                        <i class="fas fa-book mr-1"></i>Documentation
+                    </button>
+                    <button class="text-sm text-gray-500 hover:text-gray-700" data-event="click:reportIssue">
+                        <i class="fas fa-bug mr-1"></i>Report Issue
+                    </button>
+                    <button class="text-sm text-gray-500 hover:text-gray-700" data-event="click:showAbout">
+                        <i class="fas fa-info mr-1"></i>About
+                    </button>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- @END_COMPONENT: Footer -->
+
+    <script>
+        // TODO: Implement file upload handling with drag-and-drop support
+        // TODO: Add file validation for GAD.txt format
+        // TODO: Implement progress tracking for LISP code execution
+        // TODO: Add WebSocket connection for real-time progress updates
+        // TODO: Implement download functionality for generated files
+        // TODO: Add error handling and user feedback mechanisms
+        
+        (function() {
+            // File upload simulation
+            function simulateFileUpload() {
+                // Placeholder for file upload logic
+                console.log('File upload simulation');
+            }
+            
+            // Progress tracking simulation
+            function simulateProgress() {
+                // Placeholder for progress tracking
+                console.log('Progress tracking simulation');
+            }
+            
+            // Drawing generation simulation
+            function simulateDrawingGeneration() {
+                // Placeholder for LISP code execution
+                console.log('Drawing generation simulation');
+            }
+            
+            // Initialize application
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('Bridge GAD Drafter initialized');
+                // Additional initialization code would go here
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+{
+  "scale1": 100,
+  "scale2": 200,
+  "skew": 30,
+  "datum": 100.0,
+  "toprl": 110.5,
+  "left": 1000.0,
+  "right": 1080.0,
+  "xincr": 10.0,
+  "yincr": 1.0,
+  "noch": 4,
+  "deckWidth": 10.0,
+  "deckThickness": 0.3,
+  "girderSpacing": 2.5,
+  "girderDepth": 1.5,
+  "girderWidth": 0.4,
+  "diaphragmSpacing": 5.0,
+  "abutmentWidth": 1.2,
+  "pierWidth": 1.0,
+  "bearingWidth": 0.4,
+  "bearingHeight": 0.3,
+  "kerbHeight": 0.2,
+  "barrierWidth": 0.3,
+  "barrierHeight": 1.1,
+  "wearingSurfaceThickness": 0.075,
+  "haunchDepth": 0.05,
+  "haunchWidth": 0.1,
+  "deckOverhang": 1.5,
+  "clearance": 5.5,
+  "roadwayWidth": 7.3,
+  "shoulderWidth": 1.5,
+  "slope": 2.0,
+  "materialProperties": {
+    "concreteGrade": "M40",
+    "steelGrade": "Fe500",
+    "densityConcrete": 25.0,
+    "densityAsphalt": 24.0,
+    "modulusElasticityConcrete": 3.0e4,
+    "modulusElasticitySteel": 2.0e5
+  },
+  "loads": {
+    "deadLoadFactor": 1.35,
+    "liveLoadFactor": 1.5,
+    "windLoad": 1.5,
+    "seismicZone": 3,
+    "impactFactor": 1.15
+  },
+  "reinforcement": {
+    "mainBarsDia": 0.032,
+    "distributionBarsDia": 0.016,
+    "shearReinforcementDia": 0.01,
+    "clearCoverTop": 0.05,
+    "clearCoverBottom": 0.04,
+    "clearCoverSide": 0.04
+  },
+  "analysisParameters": {
+    "numberOfElements": 50,
+    "convergenceTolerance": 0.001,
+    "maxIterations": 100,
+    "analysisType": "linear",
+    "includeCreep": true,
+    "includeShrinkage": true,
+    "includeTemperature": true
+  },
+  "designParameters": {
+    "minReinforcementRatio": 0.002,
+    "maxReinforcementRatio": 0.04,
+    "crackWidthLimit": 0.3,
+    "deflectionLimit": 1.0,
+    "vibrationFrequencyLimit": 3.0
+  },
+  "outputOptions": {
+    "generateReport": true,
+    "generateDrawings": true,
+    "drawingFormat": "dwg",
+    "includeReinforcement": true,
+    "includeLoads": true,
+    "includeAnalysisResults": true
+  }
+}
