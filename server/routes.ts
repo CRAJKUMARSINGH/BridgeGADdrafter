@@ -262,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate DWG content (in a real app, this would generate actual DWG binary)
-      const dwgGenerator = new DWGGenerator(project.parameters);
+      const dwgGenerator = new DWGGeneratorService(project.parameters);
       const dwgData = dwgGenerator.exportDWG({
         paperSize: exportSettings.paperSize || "A4",
         orientation: "landscape",
@@ -465,13 +465,14 @@ function processExcelParameters(excelData: any) {
   return { ...defaults, ...parameters };
 }
 
-class DWGGenerator {
+class DWGGeneratorService {
+  private readonly params: any;
   constructor(parameters: any) {
-    this.parameters = parameters;
+    this.params = parameters;
   }
 
   exportDWG(options: any) {
-    const commands = generateDrawingCommands(this.parameters);
+    const commands = generateDrawingCommands(this.params);
     // Add more commands based on options
     return { commands };
   }

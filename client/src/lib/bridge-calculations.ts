@@ -10,6 +10,8 @@ export interface BridgeParameters {
   xincr: number;
   yincr: number;
   noch: number;
+  // Optional cross-section data (chainage vs RL) to support cs() logic
+  crossSection?: Array<{ x: number; y: number }>;
 }
 
 export interface CalculatedConstants {

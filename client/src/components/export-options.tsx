@@ -20,6 +20,10 @@ interface ExportSettings {
   includeDimensions: boolean;
   includeTitleBlock: boolean;
   includeGrid: boolean;
+  includeCrossSection?: boolean;
+  useTextStyle?: boolean;
+  includeDetailedPier?: boolean;
+  includeDetailedAbutment?: boolean;
 }
 
 export function ExportOptions({ parameters, projectId }: ExportOptionsProps) {
@@ -28,7 +32,11 @@ export function ExportOptions({ parameters, projectId }: ExportOptionsProps) {
     drawingScale: parameters ? `1:${parameters.scale1}` : "1:100",
     includeDimensions: true,
     includeTitleBlock: true,
-    includeGrid: false
+    includeGrid: false,
+    includeCrossSection: false,
+    useTextStyle: true,
+    includeDetailedPier: true,
+    includeDetailedAbutment: true
   });
   const [isExporting, setIsExporting] = useState<Record<string, boolean>>({});
   const [lispCode, setLispCode] = useState<string>("");
@@ -48,7 +56,7 @@ export function ExportOptions({ parameters, projectId }: ExportOptionsProps) {
     setIsExporting(prev => ({ ...prev, dwg: true }));
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/bridge/export/dwg`, {
+      const response = await fetch(`/api/bridge/export/dwg`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,7 +68,11 @@ export function ExportOptions({ parameters, projectId }: ExportOptionsProps) {
             drawingScale: exportSettings.drawingScale,
             includeDimensions: exportSettings.includeDimensions,
             includeTitleBlock: exportSettings.includeTitleBlock,
-            includeGrid: exportSettings.includeGrid
+            includeGrid: exportSettings.includeGrid,
+            includeCrossSection: exportSettings.includeCrossSection,
+            useTextStyle: exportSettings.useTextStyle,
+            includeDetailedPier: exportSettings.includeDetailedPier,
+            includeDetailedAbutment: exportSettings.includeDetailedAbutment
           }
         }),
         credentials: 'include'
@@ -451,6 +463,54 @@ export function ExportOptions({ parameters, projectId }: ExportOptionsProps) {
                   data-testid="include-grid-checkbox"
                 />
                 <label htmlFor="include-grid" className="text-sm">Include grid lines</label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="include-cross-section"
+                  checked={exportSettings.includeCrossSection}
+                  onCheckedChange={(checked) =>
+                    setExportSettings(prev => ({ ...prev, includeCrossSection: checked as boolean }))
+                  }
+                  data-testid="include-cross-section-checkbox"
+                />
+                <label htmlFor="include-cross-section" className="text-sm">Include cross-section (cs)</label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="use-text-style"
+                  checked={exportSettings.useTextStyle}
+                  onCheckedChange={(checked) =>
+                    setExportSettings(prev => ({ ...prev, useTextStyle: checked as boolean }))
+                  }
+                  data-testid="use-text-style-checkbox"
+                />
+                <label htmlFor="use-text-style" className="text-sm">Use text style (st)</label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="include-detailed-pier"
+                  checked={exportSettings.includeDetailedPier}
+                  onCheckedChange={(checked) =>
+                    setExportSettings(prev => ({ ...prev, includeDetailedPier: checked as boolean }))
+                  }
+                  data-testid="include-detailed-pier-checkbox"
+                />
+                <label htmlFor="include-detailed-pier" className="text-sm">Detailed pier geometry</label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="include-detailed-abutment"
+                  checked={exportSettings.includeDetailedAbutment}
+                  onCheckedChange={(checked) =>
+                    setExportSettings(prev => ({ ...prev, includeDetailedAbutment: checked as boolean }))
+                  }
+                  data-testid="include-detailed-abutment-checkbox"
+                />
+                <label htmlFor="include-detailed-abutment" className="text-sm">Detailed abutment geometry</label>
               </div>
             </div>
           </div>
