@@ -22,12 +22,16 @@ export function BridgeCanvas({ parameters, isGenerating = false }: BridgeCanvasP
     const layoutPoints = calculator.generateLayoutPoints();
     const bridgeElevation = calculator.generateBridgeElevation();
     const bridgePlan = calculator.generateBridgePlan();
+    const completeBridgeDesign = calculator.generateCompleteBridgeDesign();
+    const dimensionLines = calculator.generateDimensionLines();
     
     return {
       calculator,
       layoutPoints,
       bridgeElevation,
-      bridgePlan
+      bridgePlan,
+      completeBridgeDesign,
+      dimensionLines
     };
   }, [parameters]);
 
@@ -53,7 +57,7 @@ export function BridgeCanvas({ parameters, isGenerating = false }: BridgeCanvasP
     );
   }
 
-  const { layoutPoints, bridgeElevation, bridgePlan } = bridgeData;
+  const { layoutPoints, bridgeElevation, bridgePlan, completeBridgeDesign, dimensionLines } = bridgeData;
   const scale = zoom / 100;
 
   const renderElevationView = () => (
@@ -218,6 +222,202 @@ export function BridgeCanvas({ parameters, isGenerating = false }: BridgeCanvasP
     </div>
   );
 
+  const renderDetailsView = () => (
+    <div className="space-y-6">
+      {/* Bridge Design Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{completeBridgeDesign.nspan}</div>
+              <div className="text-sm text-gray-600">Number of Spans</div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{completeBridgeDesign.lbridge.toFixed(1)}m</div>
+              <div className="text-sm text-gray-600">Total Length</div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{completeBridgeDesign.deckDetails.thickness}m</div>
+              <div className="text-sm text-gray-600">Deck Thickness</div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">{parameters.skew}°</div>
+              <div className="text-sm text-gray-600">Skew Angle</div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* LISP-based Parameters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Bridge Parameters (From LISP System)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="font-medium">Scale 1 (Plan/Elevation):</span>
+              <div className="text-blue-600 font-mono">1:{parameters.scale1}</div>
+            </div>
+            <div>
+              <span className="font-medium">Scale 2 (Sections):</span>
+              <div className="text-blue-600 font-mono">1:{parameters.scale2}</div>
+            </div>
+            <div>
+              <span className="font-medium">Datum Level:</span>
+              <div className="text-blue-600 font-mono">{parameters.datum} m</div>
+            </div>
+            <div>
+              <span className="font-medium">Top RL:</span>
+              <div className="text-blue-600 font-mono">{parameters.toprl} m</div>
+            </div>
+            <div>
+              <span className="font-medium">Left Chainage:</span>
+              <div className="text-blue-600 font-mono">{parameters.left} m</div>
+            </div>
+            <div>
+              <span className="font-medium">Right Chainage:</span>
+              <div className="text-blue-600 font-mono">{parameters.right} m</div>
+            </div>
+            <div>
+              <span className="font-medium">X Increment:</span>
+              <div className="text-blue-600 font-mono">{parameters.xincr} m</div>
+            </div>
+            <div>
+              <span className="font-medium">Y Increment:</span>
+              <div className="text-blue-600 font-mono">{parameters.yincr} m</div>
+            </div>
+            <div>
+              <span className="font-medium">No. of Chainages:</span>
+              <div className="text-blue-600 font-mono">{parameters.noch}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Structural Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Structural Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-semibold mb-3">Deck Details</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Thickness:</span>
+                  <span className="font-mono">{completeBridgeDesign.deckDetails.thickness} m</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>C/C Bridge Width:</span>
+                  <span className="font-mono">{completeBridgeDesign.deckDetails.centerToCenterBridge} m</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Slab Thickness (Center):</span>
+                  <span className="font-mono">{completeBridgeDesign.deckDetails.slabThickness.center} m</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Slab Thickness (Edge):</span>
+                  <span className="font-mono">{completeBridgeDesign.deckDetails.slabThickness.edge} m</span>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-3">Kerb Details</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Kerb Width:</span>
+                  <span className="font-mono">{completeBridgeDesign.kerbDetails.width} m</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Kerb Depth:</span>
+                  <span className="font-mono">{completeBridgeDesign.kerbDetails.depth} m</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Span Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Span Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {completeBridgeDesign.spans.map((span, index) => (
+              <div key={index} className="border rounded-lg p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h5 className="font-semibold">Span {index + 1}</h5>
+                  <Badge variant="outline">{span.span.toFixed(1)} m</Badge>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Foundation Top RL:</span>
+                    <div className="font-mono">{span.futrl} m</div>
+                  </div>
+                  <div>
+                    <span className="font-medium">Foundation Depth:</span>
+                    <div className="font-mono">{span.futd} m</div>
+                  </div>
+                  <div>
+                    <span className="font-medium">Foundation Width:</span>
+                    <div className="font-mono">{span.futw} m</div>
+                  </div>
+                  <div>
+                    <span className="font-medium">Foundation Length:</span>
+                    <div className="font-mono">{span.futl} m</div>
+                  </div>
+                </div>
+                {span.pier && (
+                  <div className="mt-3 pt-3 border-t">
+                    <h6 className="font-medium mb-2">Pier Details</h6>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span>Cap Top:</span>
+                        <div className="font-mono">{span.pier.capT} m</div>
+                      </div>
+                      <div>
+                        <span>Cap Bottom:</span>
+                        <div className="font-mono">{span.pier.capB} m</div>
+                      </div>
+                      <div>
+                        <span>Cap Width:</span>
+                        <div className="font-mono">{span.pier.capW} m</div>
+                      </div>
+                      <div>
+                        <span>Pier Top Width:</span>
+                        <div className="font-mono">{span.pier.pierTW} m</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -260,14 +460,18 @@ export function BridgeCanvas({ parameters, isGenerating = false }: BridgeCanvasP
       
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="elevation" className="flex items-center">
               <Building className="mr-2 h-4 w-4" />
-              ELEVATION (Main)
+              ELEVATION
             </TabsTrigger>
             <TabsTrigger value="plan" className="flex items-center">
               <Map className="mr-2 h-4 w-4" />
               PLAN VIEW
+            </TabsTrigger>
+            <TabsTrigger value="details" className="flex items-center">
+              <Layers className="mr-2 h-4 w-4" />
+              DETAILS
             </TabsTrigger>
           </TabsList>
           
@@ -277,6 +481,10 @@ export function BridgeCanvas({ parameters, isGenerating = false }: BridgeCanvasP
           
           <TabsContent value="plan" className="mt-0">
             {renderPlanView()}
+          </TabsContent>
+          
+          <TabsContent value="details" className="mt-0">
+            {renderDetailsView()}
           </TabsContent>
         </Tabs>
       </CardContent>

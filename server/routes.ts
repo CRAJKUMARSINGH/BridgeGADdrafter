@@ -194,6 +194,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Process Excel file for bridge parameters (from app.py integration)
+  app.post("/api/bridge/process-excel", async (req, res) => {
+    try {
+      const { excelData } = req.body;
+      
+      if (!excelData) {
+        return res.status(400).json({ error: "Excel data is required" });
+      }
+
+      // Process Excel data similar to app.py
+      const parameters = processExcelParameters(excelData);
+      let crossSectionData: Array<{ chainage: number; level: number }> = [];
+      
+      // Process Sheet2 for cross-section data if available
+      if (excelData.Sheet2) {
+        crossSectionData = excelData.Sheet2.map((row: any) => ({
+          chainage: parseFloat(row.Chainage) || 0,
+          level: parseFloat(row.RL) || 0
+        })).filter((point: any) => !isNaN(point.chainage) && !isNaN(point.level));
+      }
+      
+      res.json({ 
+        success: true, 
+        parameters,
+        crossSectionData,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('Error processing Excel data:', error);
+      res.status(500).json({ error: "Failed to process Excel data" });
+    }
+  });
+
   // Generate LISP code
   app.post("/api/bridge/generate-lisp", async (req, res) => {
     try {
@@ -383,6 +417,52 @@ function generateDrawingCommands(parameters: any): string[] {
   commands.push(`LINE ${leftMM},${datumMM} ${leftMM},${datumMM + (parameters.toprl - parameters.datum) * 10}`);
   
   return commands;
+}
+
+// Process Excel parameters (from app.py integration)
+function processExcelParameters(excelData: any) {
+  const parameterMap: { [key: string]: string } = {
+    'SCALE1': 'scale1',
+    'SCALE2': 'scale2', 
+    'SKEW': 'skew',
+    'DATUM': 'datum',
+    'TOPRL': 'toprl',
+    'LEFT': 'left',
+    'RIGHT': 'right',
+    'XINCR': 'xincr',
+    'YINCR': 'yincr',
+    'NOCH': 'noch'
+  };
+
+  const parameters: any = {};
+  
+  // Default values (from app.py defaults)
+  const defaults = {
+    scale1: 100,
+    scale2: 50,
+    skew: 0,
+    datum: 0,
+    toprl: 20,
+    left: 0,
+    right: 100,
+    xincr: 10,
+    yincr: 2,
+    noch: 10
+  };
+
+  // Process Excel data if available
+  if (excelData && excelData.Sheet1) {
+    excelData.Sheet1.forEach((row: any) => {
+      const variable = row.Variable?.toString().toUpperCase();
+      const value = parseFloat(row.Value);
+      
+      if (variable && parameterMap[variable] && !isNaN(value)) {
+        parameters[parameterMap[variable]] = value;
+      }
+    });
+  }
+
+  return { ...defaults, ...parameters };
 }
 
 class DWGGenerator {

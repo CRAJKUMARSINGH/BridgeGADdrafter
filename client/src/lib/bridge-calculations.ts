@@ -397,4 +397,264 @@ export class BridgeCalculator {
   getParameters(): BridgeParameters {
     return this.params;
   }
+
+  // Generate comprehensive bridge design (from LISP pier() function)
+  generateCompleteBridgeDesign(): {
+    nspan: number;
+    lbridge: number;
+    abtl: number;
+    rtl: number;
+    sofl: number;
+    spans: Array<{
+      span: number;
+      futrl: number;
+      futd: number;
+      futw: number;
+      futl: number;
+      pier?: {
+        capT: number;
+        capB: number;
+        capW: number;
+        pierTW: number;
+        pierST: number;
+      };
+    }>;
+    kerbDetails: {
+      width: number;
+      depth: number;
+    };
+    deckDetails: {
+      thickness: number;
+      centerToCenterBridge: number;
+      slabThickness: {
+        center: number;
+        edge: number;
+        top: number;
+      };
+    };
+  } {
+    const bridgeLength = this.params.right - this.params.left;
+    const nspan = Math.max(1, Math.floor(bridgeLength / 30)); // 30m spans
+    
+    return {
+      nspan,
+      lbridge: bridgeLength,
+      abtl: this.params.left, // Abutment location
+      rtl: this.params.toprl, // Road top level
+      sofl: this.params.datum + 10, // Soffit level
+      spans: Array.from({ length: nspan }, (_, i) => ({
+        span: bridgeLength / nspan,
+        futrl: this.params.datum - 2, // Foundation top RL
+        futd: 2.5, // Foundation depth
+        futw: 3.5, // Foundation width
+        futl: 4.0, // Foundation length
+        pier: i < nspan - 1 ? {
+          capT: this.params.toprl - 2, // Cap top level
+          capB: this.params.toprl - 2.5, // Cap bottom level
+          capW: 2.2, // Cap width
+          pierTW: 1.8, // Pier top width
+          pierST: 8.0 // Pier stem height
+        } : undefined
+      })),
+      kerbDetails: {
+        width: 0.6, // 600mm kerb width
+        depth: 0.8  // 800mm kerb depth
+      },
+      deckDetails: {
+        thickness: 0.8, // 800mm deck thickness
+        centerToCenterBridge: 12.0, // 12m c/c bridge width
+        slabThickness: {
+          center: 0.8, // 800mm at center
+          edge: 0.6,   // 600mm at edge
+          top: 1.0     // 1000mm top thickness
+        }
+      }
+    };
+  }
+
+  // Generate cross-section points (from LISP cs() function)
+  generateCrossSection(crossSectionData: Array<{ chainage: number; level: number }>): {
+    points: Point2D[];
+    markers: Array<{ position: Point2D; chainage: string; level: string }>;
+    gridLines: {
+      vertical: Array<{ x: number; label: string }>;
+      horizontal: Array<{ y: number; label: string }>;
+    };
+  } {
+    const points: Point2D[] = [];
+    const markers: Array<{ position: Point2D; chainage: string; level: string }> = [];
+
+    crossSectionData.forEach((point, index) => {
+      const x = this.hpos(point.chainage);
+      const y = this.vpos(point.level);
+      
+      points.push({ x, y });
+      
+      // Add markers for chainage and level (based on LISP text commands)
+      const chainageStr = this.formatChainage(point.chainage);
+      const levelStr = point.level.toFixed(3);
+      
+      // Only mark chainages that are not on grid increments (as per LISP logic)
+      const chainageRemainder = (point.chainage - this.params.left) % this.params.xincr;
+      if (Math.abs(chainageRemainder) > 0.01) {
+        markers.push({
+          position: { x: x + 5, y: y - 10 },
+          chainage: chainageStr,
+          level: levelStr
+        });
+      }
+    });
+
+    // Generate grid lines (from LISP layout function)
+    const gridLines = {
+      vertical: [] as Array<{ x: number; label: string }>,
+      horizontal: [] as Array<{ y: number; label: string }>
+    };
+
+    // Vertical grid lines (chainages)
+    const noh = this.params.right - this.params.left;
+    const xSteps = Math.floor(noh / this.params.xincr);
+    for (let i = 1; i <= xSteps; i++) {
+      const chainage = this.params.left + (i * this.params.xincr);
+      gridLines.vertical.push({
+        x: this.hpos(chainage),
+        label: this.formatChainage(chainage)
+      });
+    }
+
+    // Horizontal grid lines (levels)
+    const nov = this.params.toprl - this.params.datum;
+    const ySteps = Math.floor(nov / this.params.yincr);
+    for (let i = 0; i <= ySteps; i++) {
+      const level = this.params.datum + (i * this.params.yincr);
+      gridLines.horizontal.push({
+        y: this.vpos(level),
+        label: level.toFixed(3)
+      });
+    }
+
+    return { points, markers, gridLines };
+  }
+
+  // Apply skew transformation (from LISP skew calculations)
+  applySkewTransformation(point: Point2D): Point2D {
+    if (this.params.skew === 0) return point;
+    
+    const { s, c } = this.constants;
+    return {
+      x: point.x * c - point.y * s,
+      y: point.x * s + point.y * c
+    };
+  }
+
+  // Generate professional dimension lines (from LISP DIMLINEAR commands)
+  generateDimensionLines(): Array<{
+    type: 'linear' | 'angular' | 'radial';
+    start: Point2D;
+    end: Point2D;
+    dimLinePosition: Point2D;
+    text: string;
+    style: {
+      arrowSize: number;
+      textHeight: number;
+      extensionLineLength: number;
+      extensionLineOffset: number;
+    };
+  }> {
+    const dimensions = [];
+    const style = {
+      arrowSize: 150,  // DIMASZ from LISP
+      textHeight: 400, // DIMTXT from LISP
+      extensionLineLength: 400, // DIMEXE from LISP
+      extensionLineOffset: 400  // DIMEXO from LISP
+    };
+
+    // Overall bridge length dimension
+    dimensions.push({
+      type: 'linear' as const,
+      start: { x: this.hpos(this.params.left), y: this.vpos(this.params.toprl) },
+      end: { x: this.hpos(this.params.right), y: this.vpos(this.params.toprl) },
+      dimLinePosition: { x: this.hpos((this.params.left + this.params.right) / 2), y: this.vpos(this.params.toprl) + 50 },
+      text: `${(this.params.right - this.params.left).toFixed(1)}m`,
+      style
+    });
+
+    return dimensions;
+  }
+
+  // Generate AutoCAD-style drawing commands (from LISP command generation)
+  generateDrawingCommands(): Array<{
+    command: string;
+    parameters: any[];
+    layer?: string;
+    color?: number;
+  }> {
+    const commands = [];
+    
+    // Set dimension style (from st() function)
+    commands.push({
+      command: 'DIMSTYLE',
+      parameters: ['Arial', 150, 0, 400, 400, 1, 'Arial', 400, 0, 1]
+    });
+
+    // Generate layout (from layout() function)
+    const d1 = 20;
+    const leftAdjusted = this.params.left - (this.params.left % 1.0);
+    
+    commands.push({
+      command: 'LINE',
+      parameters: [[leftAdjusted, this.params.datum], [this.hpos(this.params.right), this.params.datum]],
+      layer: 'AXES',
+      color: 7
+    });
+
+    return commands;
+  }
+
+  // Excel parameter processing (from app.py integration)
+  static processExcelParameters(excelData: any): BridgeParameters {
+    // Process Sheet1 parameters as in the Streamlit app
+    const parameterMap: { [key: string]: keyof BridgeParameters } = {
+      'SCALE1': 'scale1',
+      'SCALE2': 'scale2', 
+      'SKEW': 'skew',
+      'DATUM': 'datum',
+      'TOPRL': 'toprl',
+      'LEFT': 'left',
+      'RIGHT': 'right',
+      'XINCR': 'xincr',
+      'YINCR': 'yincr',
+      'NOCH': 'noch'
+    };
+
+    const parameters: Partial<BridgeParameters> = {};
+    
+    // Default values
+    const defaults: BridgeParameters = {
+      scale1: 100,
+      scale2: 50,
+      skew: 0,
+      datum: 0,
+      toprl: 20,
+      left: 0,
+      right: 100,
+      xincr: 10,
+      yincr: 2,
+      noch: 10
+    };
+
+    // Process Excel data if available
+    if (excelData && excelData.Sheet1) {
+      excelData.Sheet1.forEach((row: any) => {
+        const variable = row.Variable?.toString().toUpperCase();
+        const value = parseFloat(row.Value);
+        
+        if (variable && parameterMap[variable] && !isNaN(value)) {
+          (parameters as any)[parameterMap[variable]] = value;
+        }
+      });
+    }
+
+    return { ...defaults, ...parameters };
+  }
 }
