@@ -174,31 +174,64 @@ async function registerRoutes(app2) {
     try {
       const { inputData } = req.body;
       if (!inputData || typeof inputData !== "string") {
-        return res.status(400).json({ error: "Input data is required" });
+        return res.status(400).json({ error: "Input data is required and must be a string" });
+      }
+      if (inputData.length > 10 * 1024 * 1024) {
+        return res.status(413).json({ error: "Input file is too large (max 10MB)" });
       }
       const lines = inputData.trim().split("\n").map((line) => line.trim()).filter((line) => line);
       if (lines.length < 10) {
         return res.status(400).json({ error: "Input file must contain at least 10 parameters" });
       }
-      const parameters = {
-        scale1: parseFloat(lines[0]),
-        scale2: parseFloat(lines[1]),
-        skew: parseFloat(lines[2]),
-        datum: parseFloat(lines[3]),
-        toprl: parseFloat(lines[4]),
-        left: parseFloat(lines[5]),
-        right: parseFloat(lines[6]),
-        xincr: parseFloat(lines[7]),
-        yincr: parseFloat(lines[8]),
-        noch: parseInt(lines[9])
+      const parseNumericParam = (value, name, isInt = false) => {
+        const num = isInt ? parseInt(value, 10) : parseFloat(value);
+        if (isNaN(num) || isInt && !Number.isInteger(num)) {
+          throw new Error(`Invalid ${name}: ${value}`);
+        }
+        return num;
       };
+      const parameters = {
+        scale1: parseNumericParam(lines[0], "scale1"),
+        scale2: parseNumericParam(lines[1], "scale2"),
+        skew: parseNumericParam(lines[2], "skew"),
+        datum: parseNumericParam(lines[3], "datum"),
+        toprl: parseNumericParam(lines[4], "toprl"),
+        left: parseNumericParam(lines[5], "left"),
+        right: parseNumericParam(lines[6], "right"),
+        xincr: parseNumericParam(lines[7], "xincr"),
+        yincr: parseNumericParam(lines[8], "yincr"),
+        noch: parseNumericParam(lines[9], "noch", true)
+      };
+      if (parameters.scale1 <= 0 || parameters.scale2 <= 0) {
+        throw new Error("Scale values must be positive");
+      }
+      if (parameters.xincr <= 0 || parameters.yincr <= 0) {
+        throw new Error("Increment values must be positive");
+      }
+      if (parameters.noch <= 0 || !Number.isInteger(parameters.noch)) {
+        throw new Error("Number of chainages must be a positive integer");
+      }
+      if (parameters.right <= parameters.left) {
+        throw new Error("Right chainage must be greater than left chainage");
+      }
+      if (parameters.toprl <= parameters.datum) {
+        throw new Error("Top level must be greater than datum level");
+      }
       const crossSections = [];
       for (let i = 10; i < lines.length; i += 2) {
         if (i + 1 < lines.length) {
-          crossSections.push({
-            chainage: parseFloat(lines[i]),
-            level: parseFloat(lines[i + 1])
-          });
+          const chainage = parseNumericParam(lines[i], "chainage");
+          const level = parseNumericParam(lines[i + 1], "level");
+          if (chainage < parameters.left || chainage > parameters.right) {
+            throw new Error(`Chainage ${chainage} is outside the valid range [${parameters.left}, ${parameters.right}]`);
+          }
+          crossSections.push({ chainage, level });
+        }
+      }
+      crossSections.sort((a, b) => a.chainage - b.chainage);
+      if (crossSections.length > 0) {
+        if (crossSections[0].chainage > parameters.left || crossSections[crossSections.length - 1].chainage < parameters.right) {
+          throw new Error("Cross-sections must cover the full chainage range");
         }
       }
       const validatedInput = bridgeInputSchema.parse({
@@ -211,16 +244,22 @@ async function registerRoutes(app2) {
         calculatedValues: {
           vvs: 1e3,
           hhs: 1e3,
-          skew1: validatedInput.skew * 0.0174532,
+          skew1: validatedInput.skew * (Math.PI / 180),
+          // Convert to radians
           sc: validatedInput.scale1 / validatedInput.scale2
         }
       });
     } catch (error) {
       console.error("Error parsing bridge input:", error);
       if (error instanceof z2.ZodError) {
-        return res.status(400).json({ error: "Invalid input parameters", details: error.errors });
+        return res.status(400).json({
+          error: "Invalid input parameters",
+          details: error.errors
+        });
       }
-      res.status(500).json({ error: "Failed to parse input data" });
+      res.status(400).json({
+        error: error instanceof Error ? error.message : "Failed to parse input data"
+      });
     }
   });
   app2.post("/api/bridge/project", async (req, res) => {
@@ -261,10 +300,16 @@ async function registerRoutes(app2) {
       }
       const parameters = await storage.getBridgeParameters(id);
       const crossSections = await storage.getBridgeCrossSections(id);
+      let parsedProjectParameters = null;
+      try {
+        parsedProjectParameters = typeof project.parameters === "string" ? JSON.parse(project.parameters) : project.parameters;
+      } catch (_err) {
+        parsedProjectParameters = null;
+      }
       res.json({
         project: {
           ...project,
-          parameters: parameters ? JSON.parse(project.parameters) : null
+          parameters: parsedProjectParameters
         },
         parameters,
         crossSections
@@ -272,6 +317,31 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error fetching bridge project:", error);
       res.status(500).json({ error: "Failed to fetch project" });
+    }
+  });
+  app2.post("/api/bridge/process-excel", async (req, res) => {
+    try {
+      const { excelData } = req.body;
+      if (!excelData) {
+        return res.status(400).json({ error: "Excel data is required" });
+      }
+      const parameters = processExcelParameters(excelData);
+      let crossSectionData = [];
+      if (excelData.Sheet2) {
+        crossSectionData = excelData.Sheet2.map((row) => ({
+          chainage: parseFloat(row.Chainage) || 0,
+          level: parseFloat(row.RL) || 0
+        })).filter((point) => !isNaN(point.chainage) && !isNaN(point.level));
+      }
+      res.json({
+        success: true,
+        parameters,
+        crossSectionData,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } catch (error) {
+      console.error("Error processing Excel data:", error);
+      res.status(500).json({ error: "Failed to process Excel data" });
     }
   });
   app2.post("/api/bridge/generate-lisp", async (req, res) => {
@@ -293,22 +363,32 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/bridge/export/dwg", async (req, res) => {
     try {
-      const { projectId } = req.body;
+      const { projectId, exportSettings } = req.body;
       const project = await storage.getBridgeProject(projectId);
       if (!project) {
         return res.status(404).json({ error: "Project not found" });
       }
-      const drawingCommands = generateDrawingCommands(JSON.parse(project.parameters));
-      res.json({
-        success: true,
-        filename: `${project.name}.dwg`,
-        drawingCommands,
-        format: "DWG",
-        pages: 3,
-        paperSize: "A4 Landscape"
+      let projectParameters;
+      try {
+        projectParameters = typeof project.parameters === "string" ? JSON.parse(project.parameters) : project.parameters;
+      } catch (_err) {
+        return res.status(500).json({ error: "Project parameters are invalid JSON" });
+      }
+      const dwgGenerator = new DWGGeneratorService(projectParameters);
+      const dwgData = dwgGenerator.exportDWG({
+        paperSize: exportSettings.paperSize || "A4",
+        orientation: "landscape",
+        scale: parseFloat(exportSettings.drawingScale?.replace("1:", "") || "100"),
+        includeDimensions: exportSettings.includeDimensions !== false,
+        includeTitleBlock: exportSettings.includeTitleBlock !== false,
+        includeGrid: exportSettings.includeGrid === true
       });
+      const filename = `bridge_export_${(/* @__PURE__ */ new Date()).toISOString().split("T")[0]}.dwg`;
+      res.setHeader("Content-Type", "application/octet-stream");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(dwgData.commands.join("\n"));
     } catch (error) {
-      console.error("Error generating DWG export:", error);
+      console.error("DWG export error:", error);
       res.status(500).json({ error: "Failed to generate DWG export" });
     }
   });
@@ -431,6 +511,53 @@ function generateDrawingCommands(parameters) {
   commands.push(`LINE ${leftMM},${datumMM} ${leftMM},${datumMM + (parameters.toprl - parameters.datum) * 10}`);
   return commands;
 }
+function processExcelParameters(excelData) {
+  const parameterMap = {
+    "SCALE1": "scale1",
+    "SCALE2": "scale2",
+    "SKEW": "skew",
+    "DATUM": "datum",
+    "TOPRL": "toprl",
+    "LEFT": "left",
+    "RIGHT": "right",
+    "XINCR": "xincr",
+    "YINCR": "yincr",
+    "NOCH": "noch"
+  };
+  const parameters = {};
+  const defaults = {
+    scale1: 100,
+    scale2: 50,
+    skew: 0,
+    datum: 0,
+    toprl: 20,
+    left: 0,
+    right: 100,
+    xincr: 10,
+    yincr: 2,
+    noch: 10
+  };
+  if (excelData && excelData.Sheet1) {
+    excelData.Sheet1.forEach((row) => {
+      const variable = row.Variable?.toString().toUpperCase();
+      const value = parseFloat(row.Value);
+      if (variable && parameterMap[variable] && !isNaN(value)) {
+        parameters[parameterMap[variable]] = value;
+      }
+    });
+  }
+  return { ...defaults, ...parameters };
+}
+var DWGGeneratorService = class {
+  params;
+  constructor(parameters) {
+    this.params = parameters;
+  }
+  exportDWG(options) {
+    const commands = generateDrawingCommands(this.params);
+    return { commands };
+  }
+};
 
 // server/vite.ts
 import express from "express";
@@ -530,9 +657,8 @@ async function setupVite(app2, server) {
 function serveStatic(app2) {
   const distPath = path2.resolve(import.meta.dirname, "public");
   if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
+    console.warn(`Static directory not found at ${distPath}. Skipping static file serving.`);
+    return;
   }
   app2.use(express.static(distPath));
   app2.use("*", (_req, res) => {
