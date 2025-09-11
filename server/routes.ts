@@ -179,10 +179,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const parameters = await storage.getBridgeParameters(id);
       const crossSections = await storage.getBridgeCrossSections(id);
 
+      // Always parse the JSON string in project.parameters if possible
+      let parsedProjectParameters: any = null;
+      try {
+        parsedProjectParameters = typeof project.parameters === 'string'
+          ? JSON.parse(project.parameters)
+          : project.parameters;
+      } catch (_err) {
+        parsedProjectParameters = null;
+      }
+
       res.json({
         project: {
           ...project,
-          parameters: parameters ? JSON.parse(project.parameters) : null
+          parameters: parsedProjectParameters
         },
         parameters,
         crossSections
@@ -261,8 +271,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Project not found" });
       }
 
+      // Parse stored JSON parameters before using them
+      let projectParameters: any;
+      try {
+        projectParameters = typeof project.parameters === 'string'
+          ? JSON.parse(project.parameters)
+          : project.parameters;
+      } catch (_err) {
+        return res.status(500).json({ error: "Project parameters are invalid JSON" });
+      }
+
       // Generate DWG content (in a real app, this would generate actual DWG binary)
-      const dwgGenerator = new DWGGeneratorService(project.parameters);
+      const dwgGenerator = new DWGGeneratorService(projectParameters);
       const dwgData = dwgGenerator.exportDWG({
         paperSize: exportSettings.paperSize || "A4",
         orientation: "landscape",
