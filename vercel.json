@@ -1,8 +1,15 @@
 {
-  "buildCommand": "npm run build",
+  "version": 2,
+  "buildCommand": "echo 'Vercel will build serverless functions from api/* automatically'",
   "outputDirectory": "dist/public",
-  "framework": "vite",
+  "framework": null,
+  "functions": {
+    "api/**/*": {
+      "runtime": "@vercel/node@3"
+    }
+  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" }
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/client/$1" }
   ]
 }
