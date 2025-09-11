@@ -71,9 +71,10 @@ export function serveStatic(app: Express) {
   const distPath = path.resolve(import.meta.dirname, "public");
 
   if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
+    // In production environments where only the API is deployed or client build is skipped,
+    // do not throw; simply skip static serving and allow API routes to function.
+    console.warn(`Static directory not found at ${distPath}. Skipping static file serving.`);
+    return;
   }
 
   app.use(express.static(distPath));

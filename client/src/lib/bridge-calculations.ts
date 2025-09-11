@@ -237,15 +237,16 @@ export class BridgeCalculator {
     const foundationDepth = 2.0; // 2m foundation depth
     
     for (const pier of piers) {
+      // pier.points are already in drawing coordinate space, so do not re-apply hpos on widths
       const pierCenterX = (pier.points[0].x + pier.points[1].x) / 2;
-      const halfFoundationWidth = foundationWidth / 2;
-      
+      const halfFoundationWidthDrawUnits = this.hpos(this.params.left + foundationWidth) - this.hpos(this.params.left);
+
       foundations.push({
         points: [
-          { x: pierCenterX - this.hpos(halfFoundationWidth), y: this.vpos(foundationLevel) },
-          { x: pierCenterX + this.hpos(halfFoundationWidth), y: this.vpos(foundationLevel) },
-          { x: pierCenterX + this.hpos(halfFoundationWidth), y: this.vpos(foundationLevel - foundationDepth) },
-          { x: pierCenterX - this.hpos(halfFoundationWidth), y: this.vpos(foundationLevel - foundationDepth) }
+          { x: pierCenterX - halfFoundationWidthDrawUnits, y: this.vpos(foundationLevel) },
+          { x: pierCenterX + halfFoundationWidthDrawUnits, y: this.vpos(foundationLevel) },
+          { x: pierCenterX + halfFoundationWidthDrawUnits, y: this.vpos(foundationLevel - foundationDepth) },
+          { x: pierCenterX - halfFoundationWidthDrawUnits, y: this.vpos(foundationLevel - foundationDepth) }
         ],
         width: foundationWidth,
         depth: foundationDepth
